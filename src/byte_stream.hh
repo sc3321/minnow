@@ -2,8 +2,10 @@
 
 #include <queue>
 #include <stdexcept>
+#include <cstdint>
 #include <string>
 #include <string_view>
+#include <sys/types.h>
 
 class Reader;
 class Writer;
@@ -11,8 +13,17 @@ class Writer;
 class ByteStream
 {
 protected:
-  uint64_t capacity_;
+    uint64_t capacity_;
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
+    uint64_t bytes_pushed_total = 0;
+    uint64_t bytes_popped_total = 0;
+    uint64_t current_bytes_buffered     = 0;
+    bool     is_stream_closed   = 0; //NOLINT
+    std::queue<std::string> bytes = {};
+    mutable std::string peekingBuffer = "";
+    bool error = false;
+    // Helper variables
+    uint64_t offset = 0;
 
 public:
   explicit ByteStream( uint64_t capacity );

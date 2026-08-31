@@ -1,17 +1,31 @@
+#include "address.hh"
 #include "socket.hh"
 
 #include <cstdlib>
 #include <iostream>
 #include <span>
+#include <sstream>
 #include <string>
 
 using namespace std;
 
-void get_URL( const string& host, const string& path )
+//NOLINTNEXTLINE
+void get_URL(const string& host, const string& path)
 {
-  cerr << "Function called: get_URL(" << host << ", " << path << ")\n";
-  cerr << "Warning: get_URL() has not been implemented yet.\n";
-}
+    Address myAddress(host,"http"); 
+    TCPSocket mySocket;
+    mySocket.connect(myAddress);
+    mySocket.write("GET " + path + " HTTP/1.1" + "\r\n");
+    mySocket.write("Host: " + host + "\r\n");
+    mySocket.write(std::string("Connection: close \r\n"));
+    mySocket.write(std::string("\r\n"));
+    std::string response;
+    while(!mySocket.eof()){
+        mySocket.read(response);
+        std::cout << response;
+    } 
+    
+};
 
 int main( int argc, char* argv[] )
 {
