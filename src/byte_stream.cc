@@ -18,12 +18,10 @@ void Writer::push( string data )
         data.resize(available_capacity());
         bytes.push(data);
         bytes_pushed_total += data.size();
-        current_bytes_buffered += data.size();
     }
     else{
         bytes.push(data);
         bytes_pushed_total += data.size();
-        current_bytes_buffered += data.size();
     }
 
 }
@@ -45,7 +43,7 @@ bool Writer::is_closed() const
 
 uint64_t Writer::available_capacity() const
 {
-    return capacity_ - current_bytes_buffered;
+    return capacity_ - (bytes_pushed_total - bytes_popped_total);
 }
 
 uint64_t Writer::bytes_pushed() const
@@ -55,6 +53,9 @@ uint64_t Writer::bytes_pushed() const
 
 string_view Reader::peek() const
 {
+    if(bytes.empty()){
+        return {};
+    }
     std::string_view peekingBytes = bytes.front();
     if(peekingBytes.size() >= offset){
         peekingBytes.remove_prefix(offset);
@@ -63,7 +64,7 @@ string_view Reader::peek() const
     std::queue<std::string> bytesCopy = bytes;
     bytesCopy.pop();
     peekingBuffer += peekingBytes;
-    while(peekingBuffer.size() <= (current_bytes_buffered - peekingBytes.size())){
+    while(peekingBuffer.size() <= (bytes_buffered() - peekingBytes.size())){
        peekingBuffer += bytesCopy.front();
         bytesCopy.pop();
     }
@@ -81,22 +82,22 @@ bool Reader::has_error() const
 }
 
 void Reader::pop( uint64_t len )
-{
-    len += offset;
-    if(len > bytes_buffered()) {len = bytes_buffered();}
-    while(len > 0){
-        if(len >= bytes.front().size()){
-            std::string front = bytes.front();
-            bytes_popped_total += front.size();
-            current_bytes_buffered -= front.size();
-            len -= front.size();
+{  
+    if(len == 0) {return;}
+    if(len > bytes_buffered()) {
+        len = (bytes_buffered());
+    }
+    while(len > 0 && !bytes.empty()){
+        if(len >= bytes.front().size() - offset){
+            std::string_view front = bytes.front();
+            bytes_popped_total += (front.size() - offset);
+            len -= (front.size() - offset);
             offset = 0;
             bytes.pop();
         }
         else{
             offset += len;
             bytes_popped_total += len;
-            current_bytes_buffered -= len;
             len = 0;
         }
     }
@@ -104,7 +105,7 @@ void Reader::pop( uint64_t len )
 
 uint64_t Reader::bytes_buffered() const
 {
-    return current_bytes_buffered;
+    return bytes_pushed_total - bytes_popped_total;
 }
 
 uint64_t Reader::bytes_popped() const

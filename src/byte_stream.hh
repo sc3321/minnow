@@ -17,7 +17,6 @@ protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
     uint64_t bytes_pushed_total = 0;
     uint64_t bytes_popped_total = 0;
-    uint64_t current_bytes_buffered     = 0;
     bool     is_stream_closed   = 0; //NOLINT
     std::queue<std::string> bytes = {};
     mutable std::string peekingBuffer = "";
